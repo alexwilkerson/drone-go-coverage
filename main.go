@@ -9,6 +9,8 @@ import (
 )
 
 func main() {
+	fmt.Println("[drone-go-coverage]")
+
 	thresholdStr := os.Getenv("PLUGIN_COVERAGE_THRESHOLD")
 
 	if thresholdStr == "" {
@@ -22,8 +24,10 @@ func main() {
 		os.Exit(1)
 	}
 
+	fmt.Println("Running tests...")
+
 	// Run tests with coverage for the entire repository
-	cmd := exec.Command("go", "test", "-coverprofile=coverage.out", "./...")
+	cmd := exec.Command("go", "test", "-coverprofile=drone-go-coverage.out", "./...")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		fmt.Println("Tests failed")
@@ -32,7 +36,7 @@ func main() {
 	}
 
 	// Extract the total coverage from the coverage profile
-	cmd = exec.Command("go", "tool", "cover", "-func=coverage.out")
+	cmd = exec.Command("go", "tool", "cover", "-func=drone-go-coverage.out")
 	output, err = cmd.Output()
 	if err != nil {
 		fmt.Printf("Failed to extract coverage: %v\n", err)
@@ -41,7 +45,7 @@ func main() {
 	}
 
 	// Clean up the coverage profile file
-	err = os.Remove("coverage.out")
+	err = os.Remove("drone-go-coverage.out")
 	if err != nil {
 		fmt.Printf("Failed to remove coverage.out: %v\n", err)
 		os.Exit(1)
