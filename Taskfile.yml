@@ -1,0 +1,29 @@
+version: "3"
+
+tasks:
+  build:
+    desc: Build the binary
+    cmds:
+      - GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o drone-go-coverage
+
+  docker-build:
+    desc: Create docker image
+    deps: [build]
+    cmds:
+      - docker build -t alexwilkerson/drone-go-coverage .
+
+  docker-tag:
+    desc: Create docker image
+    cmds:
+      - docker tag alexwilkerson/drone-go-coverage:latest alexwilkerson/drone-go-coverage:latest
+
+  docker-push:
+    desc: Push docker image
+    cmds:
+      - docker push alexwilkerson/drone-go-coverage:latest
+
+  publish:
+    desc: Publish docker image
+    deps: [docker-build, docker-tag, docker-push]
+    cmds:
+      - rm -rf drone-go-coverage
