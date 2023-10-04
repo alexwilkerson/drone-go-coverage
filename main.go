@@ -26,7 +26,6 @@ func main() {
 
 	fmt.Println("Running tests...")
 
-	// Run tests with coverage for the entire repository
 	cmd := exec.Command("go", "test", "-coverprofile=drone-go-coverage.out", "./...")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
@@ -35,7 +34,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Extract the total coverage from the coverage profile
 	cmd = exec.Command("go", "tool", "cover", "-func=drone-go-coverage.out")
 	output, err = cmd.Output()
 	if err != nil {
@@ -44,7 +42,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Clean up the coverage profile file
 	err = os.Remove("drone-go-coverage.out")
 	if err != nil {
 		fmt.Printf("Failed to remove coverage.out: %v\n", err)
