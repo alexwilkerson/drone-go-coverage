@@ -9,3 +9,4 @@ steps:
     image: alexwilkerson/drone-go-coverage:latest
     settings:
       coverage_threshold: 49
+      subdirectory: "path/to/subdirectory"

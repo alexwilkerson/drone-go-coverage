@@ -24,6 +24,15 @@ func main() {
 		os.Exit(1)
 	}
 
+	subdirectory := os.Getenv("PLUGIN_SUBDIRECTORY")
+	if subdirectory != "" {
+		fmt.Printf("Changing to subdirectory: %s\n", subdirectory)
+		if err := os.Chdir(subdirectory); err != nil {
+			fmt.Printf("Failed to change directory: %v\n", err)
+			os.Exit(1)
+		}
+	}
+
 	fmt.Println("Running tests...")
 
 	cmd := exec.Command("go", "test", "-coverprofile=drone-go-coverage.out", "./...")

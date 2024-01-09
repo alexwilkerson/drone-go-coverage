@@ -26,4 +26,4 @@ tasks:
     desc: Publish docker image
     deps: [docker-build, docker-tag, docker-push]
     cmds:
-      - rm -rf drone-go-coverage
+      - rm drone-go-coverage
