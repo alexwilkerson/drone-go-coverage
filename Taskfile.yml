@@ -10,7 +10,7 @@ tasks:
     desc: Create docker image
     deps: [build]
     cmds:
-      - docker build -t alexwilkerson/drone-go-coverage .
+      - docker build --platform=linux/amd64 -t alexwilkerson/drone-go-coverage .
 
   docker-tag:
     desc: Create docker image
@@ -24,6 +24,8 @@ tasks:
 
   publish:
     desc: Publish docker image
-    deps: [docker-build, docker-tag, docker-push]
     cmds:
+      - task: docker-build
+      - task: docker-tag
+      - task: docker-push
       - rm drone-go-coverage
