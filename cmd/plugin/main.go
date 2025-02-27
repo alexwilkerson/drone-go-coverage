@@ -378,7 +378,7 @@ func generateReport(config Config, results []CoverageResult, totalCoverage float
 
 		if result.Coverage < threshold {
 			report.PackageResults[i].Status = statusFail
-			if config.FailBuild {
+			if found && config.FailBuild {
 				report.Status = statusFail
 			}
 		}
