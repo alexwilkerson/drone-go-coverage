@@ -1,31 +1,70 @@
 version: "3"
 
+vars:
+  IMAGE_NAME: alexwilkerson/drone-go-coverage
+  VERSION:
+    sh: git describe --tags --always | sed 's/^v//' || echo "dev"
+
 tasks:
-  build:
-    desc: Build the binary
+  clean:
+    desc: Clean build artifacts
     cmds:
-      - GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -o drone-go-coverage
+      - rm -f drone-go-coverage coverage.out coverage-report.*
+
+  build:
+    desc: Build the binary for local testing
+    cmds:
+      - go build -ldflags="-s -w -X main.version={{.VERSION}}" -o ./bin/drone-go-coverage ./cmd/plugin
 
   docker-build:
     desc: Create docker image
-    deps: [build]
     cmds:
-      - docker build --platform=linux/amd64 -t alexwilkerson/drone-go-coverage .
-
-  docker-tag:
-    desc: Create docker image
-    cmds:
-      - docker tag alexwilkerson/drone-go-coverage:latest alexwilkerson/drone-go-coverage:latest
+      - docker build --platform=linux/amd64 -t {{.IMAGE_NAME}}:{{.VERSION}} .
+      - docker tag {{.IMAGE_NAME}}:{{.VERSION}} {{.IMAGE_NAME}}:latest
 
   docker-push:
     desc: Push docker image
     cmds:
-      - docker push alexwilkerson/drone-go-coverage:latest
+      - docker push {{.IMAGE_NAME}}:{{.VERSION}}
+      - docker push {{.IMAGE_NAME}}:latest
 
   publish:
     desc: Publish docker image
     cmds:
       - task: docker-build
-      - task: docker-tag
       - task: docker-push
-      - rm drone-go-coverage
+  
+  test-docker:
+    desc: Test the plugin using Docker with example project
+    deps: [docker-build]
+    cmds:
+      - |
+        echo "Running plugin on example project with Docker..."
+        docker run --rm \
+          --platform linux/amd64 \
+          -e PLUGIN_THRESHOLD=49 \
+          -e PLUGIN_VERBOSE_OUTPUT=true \
+          -e PLUGIN_SUBDIRECTORY=example \
+          -v {{.PWD}}:/workspace \
+          -w /workspace \
+          {{.IMAGE_NAME}}:{{.VERSION}}
+      - |
+        echo "Running plugin with failing test (threshold 80)..."
+        docker run --rm \
+          --platform linux/amd64 \
+          -e PLUGIN_THRESHOLD=80 \
+          -e PLUGIN_VERBOSE_OUTPUT=true \
+          -e PLUGIN_SUBDIRECTORY=example \
+          -v {{.PWD}}:/workspace \
+          -w /workspace \
+          {{.IMAGE_NAME}}:{{.VERSION}} || echo "Test failed as expected with high threshold"
+
+  create-release:
+    desc: Create and push a new release tag (ie task release 1.0.0)
+    vars:
+      VERSION_ARG: '{{.CLI_ARGS}}'
+      GIT_TAG: 'v{{.CLI_ARGS}}'
+    cmds:
+      - echo "Creating git tag {{.GIT_TAG}} and Docker image {{.IMAGE_NAME}}:{{.VERSION_ARG}}"
+      - git tag -a {{.GIT_TAG}} -m "Release {{.GIT_TAG}}"
+      - git push origin {{.GIT_TAG}}
