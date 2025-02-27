@@ -33,7 +33,8 @@ steps:
 
 | Parameter | Description | Default |
 |-----------|-------------|---------|
-| `threshold` | Minimum coverage percentage required | (required) |
+| `threshold` | Minimum coverage percentage required | (required if `per_package_threshold` not set) |
+| `per_package_threshold` | JSON map of package patterns to thresholds | (required if `threshold` not set) |
 | `subdirectory` | Directory to run tests in | `.` |
 | `verbose_output` | Show detailed coverage information | `false` |
 | `fail_build` | Fail the build if threshold is not met | `true` |
@@ -42,7 +43,6 @@ steps:
 
 | Parameter | Description | Default |
 |-----------|-------------|---------|
-| `per_package_threshold` | JSON map of package patterns to thresholds | |
 | `include_packages` | Comma-separated list of packages to include | `./...` |
 | `exclude_packages` | Comma-separated list of packages to exclude | |
 | `cover_mode` | Coverage mode (atomic, count, set) | `atomic` |
@@ -67,13 +67,15 @@ steps:
 
 ### Advanced Configuration
 
+`per_package_threshold` uses regex pattern matching and should match the full package name.
+
 ```yaml
 steps:
   - name: coverage
     image: alexwilkerson/drone-go-coverage:latest
     settings:
       threshold: 75
-      per_package_threshold: '{"github.com/org/repo/internal/.*": 65, "github.com/org/repo/models/.*": 90}'
+      per_package_threshold: '{"github.com/org/repo/internal": 65, "github.com/org/repo/models": 90}'
       include_packages: "github.com/org/repo/..."
       exclude_packages: "github.com/org/repo/vendor/..."
       test_timeout: "5m"

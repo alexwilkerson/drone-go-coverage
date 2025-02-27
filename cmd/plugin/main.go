@@ -39,9 +39,10 @@ const (
 
 // CoverageResult represents a single file/package coverage result
 type CoverageResult struct {
-	Package  string  `json:"package"`
-	Coverage float64 `json:"coverage"`
-	Status   string  `json:"status"` // pass, fail
+	Package             string  `json:"package"`
+	Coverage            float64 `json:"coverage"`
+	Status              string  `json:"status"` // pass, fail
+	PerPackageThreshold float64 `json:"per_package_threshold"`
 }
 
 // FullReport represents the complete coverage report
@@ -131,6 +132,10 @@ func loadConfig() (Config, error) {
 	}
 
 	thresholdStr := os.Getenv("PLUGIN_THRESHOLD")
+	if thresholdStr == "" {
+		thresholdStr = os.Getenv("PLUGIN_COVERAGE_THRESHOLD") // deprecated
+	}
+
 	if thresholdStr != "" {
 		threshold, err := strconv.ParseFloat(thresholdStr, 64)
 		if err != nil {
@@ -354,7 +359,9 @@ func generateReport(config Config, results []CoverageResult, totalCoverage float
 	}
 
 	for i, result := range report.PackageResults {
+		var found bool
 		threshold := config.Threshold
+
 		for pattern, pkgThreshold := range config.PerPackageThreshold {
 			match, err := regexp.MatchString(pattern, result.Package)
 			if err != nil {
@@ -363,6 +370,7 @@ func generateReport(config Config, results []CoverageResult, totalCoverage float
 			}
 
 			if match {
+				found = true
 				threshold = pkgThreshold
 				break
 			}
@@ -374,6 +382,10 @@ func generateReport(config Config, results []CoverageResult, totalCoverage float
 				report.Status = statusFail
 			}
 		}
+
+		if found {
+			report.PackageResults[i].PerPackageThreshold = threshold
+		}
 	}
 
 	return report
@@ -382,19 +394,24 @@ func generateReport(config Config, results []CoverageResult, totalCoverage float
 func outputResults(ctx context.Context, config Config, report FullReport, coverProfile string) {
 	fmt.Println("[drone-go-coverage] Coverage Results:")
 	fmt.Println("--------------------------------------------------")
-	fmt.Printf("Total Coverage: %.2f%% (Threshold: %.2f%%)\n", report.TotalCoverage, report.Threshold)
-	fmt.Printf("Status: %s\n", strings.ToUpper(report.Status))
-	fmt.Println("--------------------------------------------------")
 
-	if config.VerboseOutput {
-		fmt.Println("[drone-go-coverage] Package Coverage Details:")
+	if len(config.PerPackageThreshold) > 0 || config.VerboseOutput {
+		fmt.Println("Package Coverage Details:")
 		fmt.Println("Package                                   Coverage  Status")
 		fmt.Println("--------------------------------------------------")
 		for _, result := range report.PackageResults {
-			fmt.Printf("%-40s %.2f%%   %s\n", result.Package, result.Coverage, strings.ToUpper(result.Status))
+			if result.PerPackageThreshold > 0 {
+				fmt.Printf("%-40s %.2f%%   %s (Threshold: %.2f%%)\n", result.Package, result.Coverage, strings.ToUpper(result.Status), result.PerPackageThreshold)
+			} else if config.VerboseOutput {
+				fmt.Printf("%-40s %.2f%%   %s\n", result.Package, result.Coverage, strings.ToUpper(result.Status))
+			}
 		}
 		fmt.Println("--------------------------------------------------")
 	}
+
+	fmt.Printf("Total Coverage: %.2f%% (Threshold: %.2f%%)\n", report.TotalCoverage, report.Threshold)
+	fmt.Printf("Status: %s\n", strings.ToUpper(report.Status))
+	fmt.Println("--------------------------------------------------")
 
 	if config.JSONReport {
 		outputJSON(config, report)
