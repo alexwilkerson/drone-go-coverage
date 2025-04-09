@@ -90,7 +90,7 @@ steps:
 
 ### Prerequisites
 
-- Go 1.23 or later
+- Go 1.24 or later
 - Docker for building and testing container images
 - [Task](https://taskfile.dev/) for running development commands
 
@@ -131,7 +131,7 @@ task publish
 ```
 
 This will:
-1. Create git tag v1.0.0
+1. Create git tag v0.2.0
 2. Push the tag to the remote repository
 3. Build and publish Docker image alexwilkerson/drone-go-coverage:0.2.0
 4. Also tag the image as alexwilkerson/drone-go-coverage:latest
