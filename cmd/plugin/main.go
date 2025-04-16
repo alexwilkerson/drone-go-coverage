@@ -237,7 +237,13 @@ func printConfig(config Config) {
 func runTests(ctx context.Context, config Config, coverProfile string) error {
 	fmt.Println("[drone-go-coverage] Running tests with coverage...")
 
-	args := []string{"test", "-coverprofile=" + coverProfile, "-covermode=" + config.CoverMode}
+	args := []string{
+		"test",
+		"-coverprofile=" + coverProfile,
+		"-covermode=" + config.CoverMode,
+		// To account for this bug: https://github.com/gotify/server/pull/758#discussion_r1953796491
+		"-coverpkg=./...",
+	}
 
 	if config.TestTimeout != "" {
 		args = append(args, fmt.Sprintf("-timeout=%s", config.TestTimeout))
